@@ -46,7 +46,7 @@ public class FeedbackBottomSheet extends BottomSheetDialogFragment implements Fe
   private ObjectAnimator countdownAnimation;
   private long duration;
   private CountDownTimer timer = null;
-
+  private DismissCommand dismissCommand = null;
   public static FeedbackBottomSheet newInstance(FeedbackBottomSheetListener feedbackBottomSheetListener,
                                                 long duration) {
     FeedbackBottomSheet feedbackBottomSheet = new FeedbackBottomSheet();
@@ -96,6 +96,15 @@ public class FeedbackBottomSheet extends BottomSheetDialogFragment implements Fe
   }
 
   @Override
+  public void onResume() {
+    super.onResume();
+    if (dismissCommand != null) {
+      dismissCommand.invoke();
+    }
+    dismissCommand = null;
+  }
+
+  @Override
   public void onDismiss(DialogInterface dialog) {
     super.onDismiss(dialog);
     feedbackBottomSheetListener.onFeedbackDismissed();
@@ -122,6 +131,11 @@ public class FeedbackBottomSheet extends BottomSheetDialogFragment implements Fe
   @Override
   public void onAnimationEnd(Animator animation) {
     FeedbackBottomSheet.this.dismiss();
+    if (FeedbackBottomSheet.this.isResumed()) {
+      FeedbackBottomSheet.this.dismiss();
+    } else {
+      dismissCommand = delayedDismissCommand;
+    }
   }
 
   //region Unused Listener Methods
@@ -232,4 +246,10 @@ public class FeedbackBottomSheet extends BottomSheetDialogFragment implements Fe
     };
     timer.start();
   }
+
+  private interface DismissCommand {
+    void invoke();
+  }
+
+  private DismissCommand delayedDismissCommand = FeedbackBottomSheet.this::dismiss;
 }
